@@ -1,0 +1,47 @@
+[
+    {
+        "Model": "Random Forest",
+        "CV Accuracy": 0.9949,
+        "Test Accuracy": 0.9932,
+        "Precision": 0.9935,
+        "Recall": 0.9932,
+        "F1 Score": 0.9932,
+        "Training Time (s)": 6.0555
+    },
+    {
+        "Model": "Decision Tree",
+        "CV Accuracy": 0.9807,
+        "Test Accuracy": 0.975,
+        "Precision": 0.9759,
+        "Recall": 0.975,
+        "F1 Score": 0.9748,
+        "Training Time (s)": 2.4781
+    },
+    {
+        "Model": "KNN",
+        "CV Accuracy": 0.9591,
+        "Test Accuracy": 0.9636,
+        "Precision": 0.9664,
+        "Recall": 0.9636,
+        "F1 Score": 0.9633,
+        "Training Time (s)": 0.0452
+    },
+    {
+        "Model": "SVM",
+        "CV Accuracy": 0.9767,
+        "Test Accuracy": 0.9795,
+        "Precision": 0.9818,
+        "Recall": 0.9795,
+        "F1 Score": 0.9794,
+        "Training Time (s)": 0.7057
+    },
+    {
+        "Model": "Gradient Boosting",
+        "CV Accuracy": 0.9801,
+        "Test Accuracy": 0.9864,
+        "Precision": 0.9872,
+        "Recall": 0.9864,
+        "F1 Score": 0.9865,
+        "Training Time (s)": 17.3582
+    }
+]

@@ -1,0 +1,6 @@
+Model,CV Accuracy,Test Accuracy,Precision,Recall,F1 Score,Training Time (s)
+Random Forest,0.9949,0.9932,0.9935,0.9932,0.9932,6.0555
+Decision Tree,0.9807,0.975,0.9759,0.975,0.9748,2.4781
+KNN,0.9591,0.9636,0.9664,0.9636,0.9633,0.0452
+SVM,0.9767,0.9795,0.9818,0.9795,0.9794,0.7057
+Gradient Boosting,0.9801,0.9864,0.9872,0.9864,0.9865,17.3582

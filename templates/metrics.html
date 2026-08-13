@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Model Metrics - AgriBrain AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading Data...</div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-transparent py-3">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-tree me-2" viewBox="0 0 16 16" style="vertical-align: text-bottom;">
+            <path d="M8.416.223a.5.5 0 0 0-.832 0l-3 4.5A.5.5 0 0 0 5 5.5h.098L3.076 8.739A.5.5 0 0 0 3.5 9.5h.191l-1.638 3.276a.5.5 0 0 0 .447.724H7V16h2v-2.5h4.5a.5.5 0 0 0 .447-.724L12.31 9.5h.191a.5.5 0 0 0 .424-.761L10.902 5.5H11a.5.5 0 0 0 .416-.777l-3-4.5zM6.437 4.758A1.5 1.5 0 0 0 5 5.5h-.726L7.332 3.61 6.437 4.758zM8 1.5l1.668 2.5H8V1.5zm0 3.5h1.938L8 7.618 6.062 5H8z"/>
+          </svg>
+          AgriBrain AI
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/metrics">Model Metrics</a>
+                </li>
+            </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+      <div class="text-center mb-5 fade-in-up">
+        <h1 class="display-5 fw-bold text-white mb-3">Model Performance Metrics</h1>
+        <p class="text-muted fs-5">A transparent view of our Machine Learning models' evaluation results.</p>
+      </div>
+
+      <div class="row justify-content-center fade-in-up" style="animation-delay: 0.1s;">
+        <div class="col-lg-10">
+          <div class="glass-card">
+            <h4 class="mb-4 text-white">Algorithm Comparison (Cross-Validation)</h4>
+            
+            {% if metrics %}
+            <div class="table-responsive">
+              <table class="table table-dark table-hover table-bordered custom-table">
+                <thead>
+                  <tr>
+                    <th>Model</th>
+                    <th>CV Accuracy</th>
+                    <th>Test Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1 Score</th>
+                    <th>Training Time (s)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in metrics %}
+                  <tr>
+                    <td class="fw-bold text-accent">{{ row.Model }}</td>
+                    <td>{{ row['CV Accuracy'] }}</td>
+                    <td>{{ row['Test Accuracy'] }}</td>
+                    <td>{{ row.Precision }}</td>
+                    <td>{{ row.Recall }}</td>
+                    <td>{{ row['F1 Score'] }}</td>
+                    <td>{{ row['Training Time (s)'] }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="mt-4">
+              <p class="text-muted small">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle me-1" viewBox="0 0 16 16" style="vertical-align: text-bottom;">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                </svg>
+                The model with the highest CV Accuracy is selected, tuned via GridSearchCV, and used for predictions.
+              </p>
+            </div>
+            {% else %}
+            <div class="alert alert-warning text-center">
+                Metrics data is currently unavailable. Please ensure the model training script has been executed.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
