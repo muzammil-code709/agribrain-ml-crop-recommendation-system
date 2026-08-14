@@ -1,622 +1,321 @@
-# AgriBrain — ML Crop Recommendation System
+# AgriBrain: A Hybrid Machine Learning and Expert System Approach to Crop Recommendation
 
-**AgriBrain** is a machine learning–powered agricultural decision-support system that recommends suitable crops based on key environmental and soil conditions.
+## Abstract
 
-The system combines a trained machine learning classifier with a rule-based **expert system** to provide both crop recommendations and interpretable agronomic guidance. Users provide soil and environmental parameters including **Nitrogen (N), Phosphorus (P), Potassium (K), temperature, humidity, soil pH, and rainfall**.
+Choosing a suitable crop for a given field depends on the joint effect of several
+soil and climatic variables — nitrogen, phosphorus, potassium, temperature,
+humidity, soil pH, and rainfall — which makes the decision difficult to make
+from intuition alone, particularly for inexperienced or resource-constrained
+farmers. This project presents **AgriBrain**, a web-based crop recommendation
+system that combines a supervised machine learning classifier with a
+rule-based expert system. The classifier is trained on a labeled dataset of
+2,200 field observations spanning 22 crop classes and, after comparing six
+candidate algorithms under 5-fold cross-validation, a tuned Random Forest
+model is selected, achieving 99.32% accuracy on a held-out test set. The
+expert system layer applies deterministic agronomic rules to the same input
+to generate interpretable nutrient alerts, fertilizer suggestions, and a
+qualitative yield outlook, so that the system's output is not a bare label
+but a short, explainable recommendation. The system is exposed through a
+Flask web application with an accompanying model-comparison dashboard.
 
-The application returns the **top three recommended crops with confidence scores**, together with nutrient alerts, fertilizer suggestions, environmental observations, and a rough yield outlook.
+## 1. Introduction
 
----
+### 1.1 Motivation
 
-## Overview
+Crop selection errors can lead to reduced yield, wasted inputs, and financial
+loss, especially when a field's soil and climate conditions are not
+well-matched to the crop being grown. Traditional decision-making for crop
+selection often relies on farmer experience or generic regional practice,
+which does not account for the specific nutrient and climatic profile of a
+given plot. Machine learning offers a data-driven alternative, learning
+patterns from historical records of which crops performed well under which
+conditions.
 
-Selecting an appropriate crop depends on multiple interacting soil and environmental conditions. AgriBrain addresses this problem by combining:
+### 1.2 Problem Statement
 
-* **Machine learning** for data-driven crop recommendation.
-* **Feature preprocessing and scaling** for consistent model input.
-* **An expert-system layer** for interpretable agronomic recommendations.
-* **A Flask web application** for interactive predictions.
-* **A model comparison pipeline** for evaluating multiple candidate algorithms.
-* **A metrics dashboard** for inspecting model performance.
+Given seven numerical field measurements — N, P, K, temperature, humidity,
+pH, and rainfall — the goal is to recommend the most suitable crop(s) for
+that field, and to accompany the recommendation with a brief, human-readable
+explanation of any nutrient or environmental concerns, rather than a
+classification label alone.
 
-The project is designed as an end-to-end machine learning application covering data preparation, model training, evaluation, deployment, and user interaction.
+### 1.3 Objectives
 
----
+- Train and compare multiple classification algorithms on a crop
+  recommendation dataset and select the best-performing model.
+- Engineer additional features that capture nutrient ratios and a simple
+  climate interaction term, and evaluate their effect on model input.
+- Design a lightweight, rule-based expert system that supplements the ML
+  prediction with interpretable agronomic guidance.
+- Package the system as a usable Flask web application with a metrics view
+  for inspecting model performance.
 
-## Key Features
+## 2. Dataset
 
-### 🌱 Machine Learning Crop Recommendation
+The dataset (`data/Crop_recommendation.csv`) consists of **2,200 samples**
+across **22 crop classes**, with **100 balanced samples per class**. Each
+row contains seven numerical attributes and a class label:
 
-The trained classifier predicts the most suitable crops based on:
+| Feature | Description | Range (min–max) |
+|---|---|---|
+| N | Nitrogen content in soil | 0 – 140 |
+| P | Phosphorus content in soil | 5 – 145 |
+| K | Potassium content in soil | 5 – 205 |
+| temperature | Ambient temperature (°C) | 8.8 – 43.7 |
+| humidity | Relative humidity (%) | 14.3 – 100.0 |
+| ph | Soil pH | 3.5 – 9.9 |
+| rainfall | Rainfall (mm) | 20.2 – 298.6 |
 
-* Nitrogen (N)
-* Phosphorus (P)
-* Potassium (K)
-* Temperature
-* Humidity
-* Soil pH
-* Rainfall
+Because the class distribution is balanced (100 samples per crop), accuracy
+is a reasonable primary metric for this dataset, and it is complemented with
+precision, recall, and F1-score (weighted) to check for any per-class
+degradation.
 
-The system provides the **top three predictions** along with their confidence scores.
+## 3. Methodology
 
-Model comparison results are stored in:
+### 3.1 Feature Engineering
 
-```text
-models/model_comparison.csv
-models/model_comparison.json
+In addition to the seven raw features, four derived features are computed
+(`src/utils/feature_engineering.py`) to give the model more direct signal on
+nutrient balance and a simple heat/humidity interaction:
+
+- N/P ratio
+- N/K ratio
+- P/K ratio
+- temperature × humidity
+
+This expands the feature space from 7 to 11 dimensions. The same
+transformation is applied identically at training time
+(`engineer_features_df`) and at inference time (`engineer_features`), so the
+model always sees a consistent feature representation.
+
+### 3.2 Preprocessing
+
+Two scalers are applied in sequence, fitted only on the training split:
+
+1. **Min-Max scaling** — normalizes each feature to a common numerical range.
+2. **Standardization** — rescales to zero mean and unit variance.
+
+Both fitted scalers are serialized (`models/minmaxscaler.pkl`,
+`models/standscaler.pkl`) and reused at inference time so that new inputs are
+transformed identically to the training data.
+
+### 3.3 Model Comparison
+
+Six candidate classifiers were trained and evaluated using **5-fold
+cross-validation** on an 80/20 stratified train-test split
+(`src/train_model.py`):
+
+- Random Forest
+- Decision Tree
+- K-Nearest Neighbors
+- Support Vector Machine
+- Gradient Boosting
+- XGBoost (optional dependency)
+
+For each model, cross-validation accuracy, test accuracy, weighted
+precision/recall/F1, and training time were recorded. Full results are saved
+to `models/model_comparison.csv` / `.json` and viewable at the `/metrics`
+route.
+
+### 3.4 Model Selection and Tuning
+
+The model with the highest cross-validation accuracy (Random Forest) was
+selected for further hyperparameter tuning via `GridSearchCV`, searching over
+`n_estimators`, `max_depth`, and `min_samples_split`. The tuned model was
+then evaluated once on the held-out test set and saved as
+`models/best_model.pkl`, along with the fitted scalers and the
+label-to-crop mapping (`models/label_dict.pkl`).
+
+## 4. Expert System Component
+
+Alongside the ML prediction, `src/expert_system.py` applies deterministic,
+threshold-based rules (defined per crop in `config.py`, with a generic
+fallback for crops without specific rules) to the same raw input values. This
+produces:
+
+- **Alerts** for nutrients, rainfall, pH, or temperature that fall outside
+  the recommended range for the predicted crop.
+- **Fertilizer suggestions** targeted at whichever nutrient is deficient
+  (e.g., urea for low nitrogen, MOP for low potassium).
+- **Guidelines** — short crop-specific management notes.
+- **A yield outlook** — a coarse qualitative estimate (Excellent / Good /
+  Moderate / Poor) based on how many alerts were triggered.
+
+This layer is intentionally simple and rule-based rather than learned, so
+its reasoning stays transparent, and it can be extended or corrected by
+adding domain knowledge without retraining the model.
+
+## 5. System Architecture
+
+```
+                    User (Web Browser)
+                           │
+                           ▼
+                  Flask Application (app.py)
+                           │
+                           ▼
+                 Input Validation & Parsing
+                           │
+                           ▼
+              Feature Engineering + Scaling
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+     ML Classifier (Random          Expert System
+     Forest, top-3 output)          (rule-based checks)
+              │                         │
+              └────────────┬────────────┘
+                           ▼
+              Recommendation + Confidence
+              + Alerts + Fertilizer Advice
+              + Yield Outlook
+                           │
+                           ▼
+                    Rendered Web Page
 ```
 
-### 🧠 Expert System
+## 6. Results
 
-A rule-based expert system complements the machine learning prediction.
+| Model | CV Accuracy | Test Accuracy | Precision | Recall | F1-Score | Training Time (s) |
+|---|---|---|---|---|---|---|
+| **Random Forest** | **0.9949** | **0.9932** | **0.9935** | **0.9932** | **0.9932** | 6.06 |
+| Gradient Boosting | 0.9801 | 0.9864 | 0.9872 | 0.9864 | 0.9865 | 17.36 |
+| SVM | 0.9767 | 0.9795 | 0.9818 | 0.9795 | 0.9794 | 0.71 |
+| Decision Tree | 0.9807 | 0.9750 | 0.9759 | 0.9750 | 0.9748 | 2.48 |
+| KNN | 0.9591 | 0.9636 | 0.9664 | 0.9636 | 0.9633 | 0.05 |
 
-It analyzes the supplied field conditions and provides:
+*(Values reproduced from `models/model_comparison.json`; XGBoost is included
+in the training script but was not installed when this comparison was run.)*
 
-* Nutrient deficiency or excess alerts
-* Fertilizer recommendations
-* pH-related observations
-* Temperature and rainfall observations
-* Agronomic guidance
-* Rough yield outlook for the recommended crop
+### 6.1 Discussion
 
-This hybrid approach combines **predictive modeling** with **interpretable rule-based reasoning**.
+Random Forest achieved the best cross-validation and test accuracy among the
+evaluated models and was selected as the deployed model. All models achieved
+above 96% test accuracy, which is expected given the dataset's relatively
+low dimensionality, balanced classes, and clearly separable nutrient/climate
+profiles per crop. KNN, while fastest to train, had the lowest accuracy of
+the group. Gradient Boosting performed competitively but at roughly 3×
+Random Forest's training time. These results should be interpreted with the
+dataset's scope in mind — 22 crops and 2,200 samples — and may not
+generalize directly to regions, soil types, or crop varieties not
+represented in the training data.
 
-### 📊 Model Evaluation Dashboard
+## 7. Project Structure
 
-The `/metrics` endpoint provides a web-based view of candidate model performance, including:
-
-* Accuracy
-* Precision
-* Recall
-* F1-score
-
-The training pipeline compares multiple machine learning algorithms before selecting and tuning the best-performing candidate.
-
-### 🌐 Web Application
-
-AgriBrain provides a Flask-based web interface where users can:
-
-1. Enter soil and environmental conditions.
-2. Submit the field parameters.
-3. Receive crop recommendations.
-4. View confidence scores.
-5. Review expert-system insights.
-6. Inspect model evaluation metrics.
-
----
-
-## System Architecture
-
-```text
-                  User
-                   │
-                   ▼
-            Flask Web Interface
-                   │
-                   ▼
-          Input Validation Layer
-                   │
-                   ▼
-        Feature Preprocessing
-                   │
-          ┌────────┴────────┐
-          ▼                 ▼
-   ML Recommendation   Expert System
-          │                 │
-          │                 ├── Nutrient Analysis
-          │                 ├── Fertilizer Advice
-          │                 ├── Environmental Alerts
-          │                 └── Yield Outlook
-          │
-          ▼
-      Top-3 Crops
-    + Confidence Scores
-          │
-          └────────┬────────┘
-                   ▼
-            Final Results
-                   │
-                   ▼
-                User
 ```
-
----
-
-## Project Structure
-
-```text
 agribrain-crop-recommendation/
-│
-├── app.py                         # Flask application and web routes
-├── config.py                      # Central configuration and rule tables
-├── requirements.txt               # Python dependencies
-├── README.md                      # Project documentation
-├── LICENSE                        # MIT License
-│
+├── app.py                   # Flask app: routes for /, /predict, /metrics
+├── config.py                 # Central paths + expert-system rule tables
+├── requirements.txt
 ├── data/
-│   └── Crop_recommendation.csv    # Crop recommendation dataset
-│
+│   └── Crop_recommendation.csv
 ├── models/
-│   ├── best_model.pkl             # Selected trained model
-│   ├── minmaxscaler.pkl           # Min-Max scaler
-│   ├── standscaler.pkl            # Standard scaler
-│   ├── label_dict.pkl             # Label/class mapping
-│   ├── model_comparison.csv       # Model evaluation results
-│   └── model_comparison.json      # Model evaluation results in JSON
-│
+│   ├── best_model.pkl
+│   ├── minmaxscaler.pkl
+│   ├── standscaler.pkl
+│   ├── label_dict.pkl
+│   ├── model_comparison.csv
+│   └── model_comparison.json
 ├── src/
-│   ├── __init__.py
-│   ├── ml_model.py                # Model loading and prediction logic
-│   ├── expert_system.py           # Rule-based agronomic reasoning
-│   ├── train_model.py             # Training, comparison, tuning, and saving
-│   │
+│   ├── ml_model.py            # CropRecommender: loads model/scalers, predicts
+│   ├── expert_system.py       # Rule-based agronomic insights
+│   ├── train_model.py         # Trains, compares, tunes, and saves the model
 │   └── utils/
-│       ├── __init__.py
-│       ├── feature_engineering.py # Feature preparation utilities
-│       └── logger.py              # Application/training logging
-│
-├── templates/
-│   ├── index.html                 # Main prediction interface
-│   └── metrics.html               # Model metrics dashboard
-│
-├── static/
-│   ├── css/
-│   │   └── style.css              # Application styling
-│   └── images/
-│       └── bg.png                 # Application background
-│
+│       ├── feature_engineering.py
+│       └── logger.py
+├── templates/                 # Jinja2 templates (index, metrics)
+├── static/                    # CSS + images
 ├── notebooks/
-│   └── crop_analysis.ipynb        # Exploratory data analysis
-│
+│   └── crop_analysis.ipynb    # Exploratory data analysis
 ├── tests/
-│   └── test_app.py                # Application tests
-│
+│   └── test_app.py
 └── docs/
-    └── methodology.md             # Modeling and expert-system methodology
+    └── methodology.md         # Extended notes on the modeling approach
 ```
 
----
+## 8. Installation and Usage
 
-## Machine Learning Pipeline
+### 8.1 Prerequisites
 
-The training pipeline follows these general stages:
+- Python 3.10+
+- pip
+- Git
 
-```text
-Dataset
-   │
-   ▼
-Data Preparation
-   │
-   ▼
-Feature Engineering
-   │
-   ▼
-Train/Test Processing
-   │
-   ▼
-Feature Scaling
-   │
-   ▼
-Candidate Model Training
-   │
-   ├── Random Forest
-   ├── Decision Tree
-   ├── KNN
-   ├── SVM
-   ├── Gradient Boosting
-   └── XGBoost (optional)
-   │
-   ▼
-Model Evaluation
-   │
-   ▼
-Best Model Selection
-   │
-   ▼
-Hyperparameter Tuning
-   │
-   ▼
-Model + Scalers + Label Mapping
-   │
-   ▼
-Saved to models/
-```
-
-The training pipeline evaluates candidate models using standard classification metrics and stores the comparison results for further analysis.
-
----
-
-## Input Features
-
-AgriBrain uses seven primary input variables:
-
-| Feature       | Description                |
-| ------------- | -------------------------- |
-| `N`           | Nitrogen content in soil   |
-| `P`           | Phosphorus content in soil |
-| `K`           | Potassium content in soil  |
-| `Temperature` | Environmental temperature  |
-| `Humidity`    | Environmental humidity     |
-| `pH`          | Soil acidity/alkalinity    |
-| `Rainfall`    | Rainfall measurement       |
-
-These features are processed using the project's saved preprocessing artifacts before being passed to the trained model.
-
----
-
-## Output
-
-For each valid input, AgriBrain provides:
-
-### Machine Learning Output
-
-* Top-3 recommended crops
-* Prediction confidence scores
-* Best-ranked crop
-
-### Expert-System Output
-
-* Nutrient condition analysis
-* Nutrient alerts
-* Fertilizer suggestions
-* Environmental observations
-* Approximate yield outlook
-
-This provides users with both a **prediction** and an **explanation-oriented recommendation layer**.
-
----
-
-# Getting Started
-
-## Prerequisites
-
-Make sure you have:
-
-* Python 3.10+ recommended
-* Git
-* pip
-* A modern web browser
-
----
-
-## Installation
-
-### 1. Clone the repository
+### 8.2 Setup
 
 ```bash
 git clone https://github.com/muzammil-code709/agribrain-ml-crop-recommendation-system.git
-```
-
-Navigate to the project:
-
-```bash
 cd agribrain-ml-crop-recommendation-system
-```
-
-### 2. Create a virtual environment
-
-#### Windows
-
-```bash
 python -m venv venv
-venv\Scripts\activate
-```
-
-#### Linux/macOS
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
+### 8.3 Run the application
 
-# Running the Application
-
-Pre-trained model artifacts are included in the `models/` directory, so the application can be launched without retraining the model.
-
-Run:
+Trained model artifacts are already included under `models/`, so the app can
+be run directly without retraining:
 
 ```bash
 python app.py
 ```
 
-The application will be available at:
+The application is served at `http://localhost:5000`.
 
-```text
-http://localhost:5000
-```
-
-Open the URL in your browser and enter the required soil and environmental parameters.
-
----
-
-# Model Retraining
-
-To retrain the machine learning models using the dataset in:
-
-```text
-data/Crop_recommendation.csv
-```
-
-run:
+### 8.4 Retrain the model (optional)
 
 ```bash
 python -m src.train_model
 ```
 
-The training pipeline:
+This regenerates `models/best_model.pkl`, both scalers, the label mapping,
+and the model comparison report from `data/Crop_recommendation.csv`.
 
-1. Loads the dataset.
-2. Prepares the features and target labels.
-3. Performs feature preprocessing.
-4. Trains multiple candidate models.
-5. Evaluates model performance.
-6. Selects the strongest candidate.
-7. Performs model tuning.
-8. Saves the trained model.
-9. Saves preprocessing scalers.
-10. Saves the label mapping.
-11. Generates model comparison reports.
-
-Generated artifacts are stored in:
-
-```text
-models/
-```
-
----
-
-# Running Tests
-
-Run the test suite with:
+## 9. Testing
 
 ```bash
 pytest
 ```
 
-For more detailed output:
-
-```bash
-pytest -v
-```
-
----
-
-# Model Comparison
-
-AgriBrain's training pipeline can evaluate several candidate classifiers, including:
-
-* Random Forest
-* Decision Tree
-* K-Nearest Neighbors (KNN)
-* Support Vector Machine (SVM)
-* Gradient Boosting
-* XGBoost, when available
-
-The comparison results are saved as:
-
-```text
-models/model_comparison.csv
-models/model_comparison.json
-```
-
-The evaluation considers standard classification metrics such as:
-
-* Accuracy
-* Precision
-* Recall
-* F1-score
-
----
-
-# Technology Stack
-
-### Programming Language
-
-* **Python**
-
-### Web Framework
-
-* **Flask**
-* **Jinja2**
-* **HTML5**
-* **CSS3**
-
-### Machine Learning
-
-* **scikit-learn**
-* **XGBoost** *(optional)*
-
-### Data Processing
-
-* **pandas**
-* **NumPy**
-
-### Development & Testing
-
-* **pytest**
-* **Jupyter Notebook**
-
-### Model Persistence
-
-* **Joblib / Pickle-based model artifacts**
-
----
-
-# Project Methodology
-
-AgriBrain follows a hybrid decision-support approach.
-
-### Machine Learning Layer
-
-The machine learning layer learns relationships between soil/environmental conditions and suitable crops from historical crop recommendation data.
-
-### Expert-System Layer
-
-The expert system applies predefined agronomic rules to provide interpretable recommendations that complement the statistical model.
-
-### Hybrid Decision Support
-
-The final system combines both components:
-
-```text
-Machine Learning
-      +
-Expert-System Reasoning
-      ↓
-Crop Recommendation
-+
-Agronomic Guidance
-```
-
-This design allows the application to provide more than a simple classification result by adding rule-based context around the prediction.
-
-For additional methodological details, see:
-
-```text
-docs/methodology.md
-```
-
----
-
-# API / Application Routes
-
-The Flask application currently provides the following primary routes:
-
-| Route      | Method | Purpose                                                  |
-| ---------- | ------ | -------------------------------------------------------- |
-| `/`        | `GET`  | Displays the crop recommendation interface               |
-| `/predict` | `POST` | Processes field conditions and generates recommendations |
-| `/metrics` | `GET`  | Displays model comparison metrics                        |
-
----
-
-# Data
-
-The project uses a crop recommendation dataset containing soil and environmental characteristics associated with crop classes.
-
-The primary dataset is located at:
-
-```text
-data/Crop_recommendation.csv
-```
-
-The dataset is used during model training and evaluation.
-
----
-
-# Reproducibility
-
-The repository includes the trained model and preprocessing artifacts required to run the application without retraining:
-
-```text
-models/
-├── best_model.pkl
-├── minmaxscaler.pkl
-├── standscaler.pkl
-└── label_dict.pkl
-```
-
-This allows users to clone the repository, install the dependencies, and run the application directly.
-
-For reproducible retraining, use the provided dataset and training pipeline:
-
-```bash
-python -m src.train_model
-```
-
----
-
-# Limitations
-
-AgriBrain is intended as a **decision-support and educational machine learning application**, not as a replacement for professional agricultural consultation.
-
-The quality of recommendations depends on:
-
-* Dataset quality and representativeness
-* Model performance
-* Accuracy of user-provided field measurements
-* Coverage of the training data
-* Validity of predefined expert-system rules
-
-The yield outlook and agronomic guidance should therefore be treated as approximate recommendations rather than guaranteed outcomes.
-
----
-
-# Future Improvements
-
-Potential future improvements include:
-
-* Integration with real-time weather APIs
-* Location-aware recommendations
-* Soil sensor integration
-* Larger and more geographically diverse datasets
-* Explainable AI techniques such as SHAP
-* Improved yield prediction using dedicated regression models
-* Database-backed user and field management
-* Model monitoring and versioning
-* Cloud deployment
-* REST API support
-* Mobile-friendly interface
-* Automated model retraining pipelines
-
----
-
-# Repository Workflow
-
-The recommended development workflow is:
-
-```text
-Data
-  ↓
-Exploration
-  ↓
-Feature Engineering
-  ↓
-Model Training
-  ↓
-Model Evaluation
-  ↓
-Model Selection
-  ↓
-Model Persistence
-  ↓
-Flask Integration
-  ↓
-Expert-System Reasoning
-  ↓
-Testing
-  ↓
-Deployment
-```
-
----
-
-# License
-
-This project is released under the **MIT License**.
-
-See the [LICENSE](LICENSE) file for the complete license text.
-
----
-
-# Author
+The test suite (`tests/test_app.py`) checks that the index, prediction, and
+metrics routes respond correctly, including basic input validation (e.g.,
+invalid pH, non-numeric input).
+
+## 10. Limitations
+
+- The dataset covers 22 crops from a specific data source; recommendations
+  may not generalize to crops, soils, or climates outside its scope.
+- The expert-system rules were defined for a small set of crops
+  (Rice, Maize, Cotton, Mango, Apple) with a generic fallback used for all
+  others, so agronomic guidance is more specific for those five crops.
+- The yield outlook is a coarse heuristic based on the number of triggered
+  alerts, not a learned regression estimate, and should be read as
+  indicative rather than precise.
+- Model evaluation was performed on a single train/test split; results may
+  vary slightly with different random seeds or data splits.
+
+## 11. Future Work
+
+- Extend expert-system rules to cover more crops individually.
+- Replace the yield heuristic with a trained regression model.
+- Incorporate real-time weather data for location-aware recommendations.
+- Add explainability tooling (e.g., feature importance or SHAP values) to
+  the metrics dashboard.
+
+## 12. Technology Stack
+
+- **Language:** Python
+- **Web framework:** Flask, Jinja2, HTML/CSS
+- **Machine learning:** scikit-learn, XGBoost (optional)
+- **Data handling:** pandas, NumPy
+- **Testing:** pytest
+
+## License
+
+Released under the MIT License — see [LICENSE](LICENSE).
+
+## Author
 
 **Muzammil**
-
 GitHub: [@muzammil-code709](https://github.com/muzammil-code709)
-
----
-
-## Project Status
-
-**Status:** Active Development
-
-AgriBrain is currently being developed as an end-to-end machine learning and agricultural decision-support project, with ongoing improvements to its modeling pipeline, software architecture, testing, and documentation.
