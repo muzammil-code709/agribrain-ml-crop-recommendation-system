@@ -168,17 +168,9 @@ adding domain knowledge without retraining the model.
 ## 📈 6. Results
 
 <p align="center">
-  <img src="images/algorithm peformance comparison.png" alt="AgriBrain System Architecture" width="600" height="600">
+  <img src="algorithm_peformance_comparison" alt="AgriBrain alogrithms performance" width="600" height="600">
 </p>
 
-
-| Model | CV Accuracy | Test Accuracy | Precision | Recall | F1-Score | Training Time (s) |
-|---|---|---|---|---|---|---|
-| **Random Forest** | **0.9949** | **0.9932** | **0.9935** | **0.9932** | **0.9932** | 6.06 |
-| Gradient Boosting | 0.9801 | 0.9864 | 0.9872 | 0.9864 | 0.9865 | 17.36 |
-| SVM | 0.9767 | 0.9795 | 0.9818 | 0.9795 | 0.9794 | 0.71 |
-| Decision Tree | 0.9807 | 0.9750 | 0.9759 | 0.9750 | 0.9748 | 2.48 |
-| KNN | 0.9591 | 0.9636 | 0.9664 | 0.9636 | 0.9633 | 0.05 |
 
 *(Values reproduced from `models/model_comparison.json`; XGBoost is included
 in the training script but was not installed when this comparison was run.)*
