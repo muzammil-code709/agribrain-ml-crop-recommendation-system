@@ -161,7 +161,7 @@ adding domain knowledge without retraining the model.
                  The overall system architecture is illustrated below:
 
 <p align="center">
-  <img src="images/system_architecture.png" alt="AgriBrain System Architecture" width="900">
+  <img src="images/system_architecture.png" alt="AgriBrain System Architecture" width="600">
 </p>
 
 
