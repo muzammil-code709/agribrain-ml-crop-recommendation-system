@@ -168,7 +168,7 @@ adding domain knowledge without retraining the model.
 ## 📈 6. Results
 
 <p align="center">
-  <img src="algorithm_peformance_comparison" alt="AgriBrain alogrithms performance" width="600" height="600">
+  <img src="algorithm_performance_comparison.png " alt="AgriBrain alogrithms performance" width="600" height="600">
 </p>
 
 
