@@ -167,6 +167,11 @@ adding domain knowledge without retraining the model.
 
 ## 📈 6. Results
 
+<p align="center">
+  <img src="images/algorithm peformance comparison.png" alt="AgriBrain System Architecture" width="600" height="600">
+</p>
+
+
 | Model | CV Accuracy | Test Accuracy | Precision | Recall | F1-Score | Training Time (s) |
 |---|---|---|---|---|---|---|
 | **Random Forest** | **0.9949** | **0.9932** | **0.9935** | **0.9932** | **0.9932** | 6.06 |
