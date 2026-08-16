@@ -1,6 +1,16 @@
 # AgriBrain: A Hybrid Machine Learning and Expert System Approach to Crop Recommendation
 
-## Abstract
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-Web%20App-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![XGBoost](https://img.shields.io/badge/XGBoost-Optional-189FDD?logo=xgboost&logoColor=white)](https://xgboost.ai/)
+[![Tests](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white)](https://pytest.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+> 🌾 **AgriBrain** — A hybrid machine learning and expert-system approach to crop recommendation.
+
+
+## 📖 Abstract
 
 Choosing a suitable crop for a given field depends on the joint effect of several
 soil and climatic variables — nitrogen, phosphorus, potassium, temperature,
@@ -18,9 +28,9 @@ qualitative yield outlook, so that the system's output is not a bare label
 but a short, explainable recommendation. The system is exposed through a
 Flask web application with an accompanying model-comparison dashboard.
 
-## 1. Introduction
+## 🌱 1. Introduction
 
-### 1.1 Motivation
+### 💡 1.1 Motivation
 
 Crop selection errors can lead to reduced yield, wasted inputs, and financial
 loss, especially when a field's soil and climate conditions are not
@@ -31,7 +41,7 @@ given plot. Machine learning offers a data-driven alternative, learning
 patterns from historical records of which crops performed well under which
 conditions.
 
-### 1.2 Problem Statement
+### 🎯 1.2 Problem Statement
 
 Given seven numerical field measurements — N, P, K, temperature, humidity,
 pH, and rainfall — the goal is to recommend the most suitable crop(s) for
@@ -39,7 +49,7 @@ that field, and to accompany the recommendation with a brief, human-readable
 explanation of any nutrient or environmental concerns, rather than a
 classification label alone.
 
-### 1.3 Objectives
+### 🧭 1.3 Objectives
 
 - Train and compare multiple classification algorithms on a crop
   recommendation dataset and select the best-performing model.
@@ -50,7 +60,7 @@ classification label alone.
 - Package the system as a usable Flask web application with a metrics view
   for inspecting model performance.
 
-## 2. Dataset
+## 📊 2. Dataset
 
 The dataset (`data/Crop_recommendation.csv`) consists of **2,200 samples**
 across **22 crop classes**, with **100 balanced samples per class**. Each
@@ -71,9 +81,9 @@ is a reasonable primary metric for this dataset, and it is complemented with
 precision, recall, and F1-score (weighted) to check for any per-class
 degradation.
 
-## 3. Methodology
+## 🔬 3. Methodology
 
-### 3.1 Feature Engineering
+### 🧩 3.1 Feature Engineering
 
 In addition to the seven raw features, four derived features are computed
 (`src/utils/feature_engineering.py`) to give the model more direct signal on
@@ -89,7 +99,7 @@ transformation is applied identically at training time
 (`engineer_features_df`) and at inference time (`engineer_features`), so the
 model always sees a consistent feature representation.
 
-### 3.2 Preprocessing
+### ⚙️ 3.2 Preprocessing
 
 Two scalers are applied in sequence, fitted only on the training split:
 
@@ -100,7 +110,7 @@ Both fitted scalers are serialized (`models/minmaxscaler.pkl`,
 `models/standscaler.pkl`) and reused at inference time so that new inputs are
 transformed identically to the training data.
 
-### 3.3 Model Comparison
+### 🤖 3.3 Model Comparison
 
 Six candidate classifiers were trained and evaluated using **5-fold
 cross-validation** on an 80/20 stratified train-test split
@@ -118,7 +128,7 @@ precision/recall/F1, and training time were recorded. Full results are saved
 to `models/model_comparison.csv` / `.json` and viewable at the `/metrics`
 route.
 
-### 3.4 Model Selection and Tuning
+### 🏆 3.4 Model Selection and Tuning
 
 The model with the highest cross-validation accuracy (Random Forest) was
 selected for further hyperparameter tuning via `GridSearchCV`, searching over
@@ -127,7 +137,7 @@ then evaluated once on the held-out test set and saved as
 `models/best_model.pkl`, along with the fitted scalers and the
 label-to-crop mapping (`models/label_dict.pkl`).
 
-## 4. Expert System Component
+## 🧠 4. Expert System Component
 
 Alongside the ML prediction, `src/expert_system.py` applies deterministic,
 threshold-based rules (defined per crop in `config.py`, with a generic
@@ -146,7 +156,7 @@ This layer is intentionally simple and rule-based rather than learned, so
 its reasoning stays transparent, and it can be extended or corrected by
 adding domain knowledge without retraining the model.
 
-## 5. System Architecture
+## 🏗️ 5. System Architecture
 
 ```
                     User (Web Browser)
@@ -175,7 +185,7 @@ adding domain knowledge without retraining the model.
                     Rendered Web Page
 ```
 
-## 6. Results
+## 📈 6. Results
 
 | Model | CV Accuracy | Test Accuracy | Precision | Recall | F1-Score | Training Time (s) |
 |---|---|---|---|---|---|---|
@@ -188,7 +198,7 @@ adding domain knowledge without retraining the model.
 *(Values reproduced from `models/model_comparison.json`; XGBoost is included
 in the training script but was not installed when this comparison was run.)*
 
-### 6.1 Discussion
+### 💬 6.1 Discussion
 
 Random Forest achieved the best cross-validation and test accuracy among the
 evaluated models and was selected as the deployed model. All models achieved
@@ -201,7 +211,7 @@ dataset's scope in mind — 22 crops and 2,200 samples — and may not
 generalize directly to regions, soil types, or crop varieties not
 represented in the training data.
 
-## 7. Project Structure
+## 🗂️ 7. Project Structure
 
 ```
 agribrain-crop-recommendation/
@@ -234,15 +244,15 @@ agribrain-crop-recommendation/
     └── methodology.md         # Extended notes on the modeling approach
 ```
 
-## 8. Installation and Usage
+## 🚀 8. Installation and Usage
 
-### 8.1 Prerequisites
+### 📋 8.1 Prerequisites
 
 - Python 3.10+
 - pip
 - Git
 
-### 8.2 Setup
+### 🛠️ 8.2 Setup
 
 ```bash
 git clone https://github.com/muzammil-code709/agribrain-ml-crop-recommendation-system.git
@@ -252,7 +262,7 @@ source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 8.3 Run the application
+### ▶️ 8.3 Run the application
 
 Trained model artifacts are already included under `models/`, so the app can
 be run directly without retraining:
@@ -263,7 +273,7 @@ python app.py
 
 The application is served at `http://localhost:5000`.
 
-### 8.4 Retrain the model (optional)
+### 🔄 8.4 Retrain the model (optional)
 
 ```bash
 python -m src.train_model
@@ -272,7 +282,7 @@ python -m src.train_model
 This regenerates `models/best_model.pkl`, both scalers, the label mapping,
 and the model comparison report from `data/Crop_recommendation.csv`.
 
-## 9. Testing
+## 🧪 9. Testing
 
 ```bash
 pytest
@@ -282,7 +292,7 @@ The test suite (`tests/test_app.py`) checks that the index, prediction, and
 metrics routes respond correctly, including basic input validation (e.g.,
 invalid pH, non-numeric input).
 
-## 10. Limitations
+## ⚠️ 10. Limitations
 
 - The dataset covers 22 crops from a specific data source; recommendations
   may not generalize to crops, soils, or climates outside its scope.
@@ -295,7 +305,7 @@ invalid pH, non-numeric input).
 - Model evaluation was performed on a single train/test split; results may
   vary slightly with different random seeds or data splits.
 
-## 11. Future Work
+## 🔮 11. Future Work
 
 - Extend expert-system rules to cover more crops individually.
 - Replace the yield heuristic with a trained regression model.
@@ -303,7 +313,7 @@ invalid pH, non-numeric input).
 - Add explainability tooling (e.g., feature importance or SHAP values) to
   the metrics dashboard.
 
-## 12. Technology Stack
+## 🧰 12. Technology Stack
 
 - **Language:** Python
 - **Web framework:** Flask, Jinja2, HTML/CSS
@@ -311,11 +321,11 @@ invalid pH, non-numeric input).
 - **Data handling:** pandas, NumPy
 - **Testing:** pytest
 
-## License
+## 📄 License
 
 Released under the MIT License — see [LICENSE](LICENSE).
 
-## Author
+## 👤 Author
 
 **Muzammil**
 GitHub: [@muzammil-code709](https://github.com/muzammil-code709)
