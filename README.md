@@ -158,32 +158,12 @@ adding domain knowledge without retraining the model.
 
 ## 🏗️ 5. System Architecture
 
-```
-                    User (Web Browser)
-                           │
-                           ▼
-                  Flask Application (app.py)
-                           │
-                           ▼
-                 Input Validation & Parsing
-                           │
-                           ▼
-              Feature Engineering + Scaling
-                           │
-              ┌────────────┴────────────┐
-              ▼                         ▼
-     ML Classifier (Random          Expert System
-     Forest, top-3 output)          (rule-based checks)
-              │                         │
-              └────────────┬────────────┘
-                           ▼
-              Recommendation + Confidence
-              + Alerts + Fertilizer Advice
-              + Yield Outlook
-                           │
-                           ▼
-                    Rendered Web Page
-```
+                 The overall system architecture is illustrated below:
+
+<p align="center">
+  <img src="images/sysem_architecture.png" alt="AgriBrain System Architecture" width="900">
+</p>
+
 
 ## 📈 6. Results
 
