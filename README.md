@@ -302,7 +302,6 @@ invalid pH, non-numeric input).
 
 Released under the MIT License — see [LICENSE](LICENSE).
 
----
 
 # 👨‍💻 Author
 
@@ -313,7 +312,6 @@ Released under the MIT License — see [LICENSE](LICENSE).
 - 💻 GitHub: *(https://github.com/muzammil-code709)*
 - 💼 LinkedIn: *(https://www.linkedin.com/in/muzammil-saleem-9ba004285)*
 
----
 
 # ⭐ Support
 
@@ -321,4 +319,3 @@ If you found this project helpful or insightful, consider giving this repository
 
 Your support is greatly appreciated!
 
----
