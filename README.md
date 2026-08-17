@@ -302,7 +302,23 @@ invalid pH, non-numeric input).
 
 Released under the MIT License — see [LICENSE](LICENSE).
 
-## 👤 Author
+---
 
-**Muzammil**
-GitHub: [@muzammil-code709](https://github.com/muzammil-code709)
+# 👨‍💻 Author
+
+## **Muzammil Saleem**
+
+🎓 Data Analyst | Power BI Analyst  
+
+- 💻 GitHub: *(https://github.com/muzammil-code709)*
+- 💼 LinkedIn: *(https://www.linkedin.com/in/muzammil-saleem-9ba004285)*
+
+---
+
+# ⭐ Support
+
+If you found this project helpful or insightful, consider giving this repository a **⭐ Star**.
+
+Your support is greatly appreciated!
+
+---
